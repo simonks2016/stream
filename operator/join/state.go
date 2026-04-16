@@ -1,6 +1,6 @@
 package join
 
-import "eventBus/stream"
+import "github.com/simonks2016/stream/stream"
 
 type State struct {
 	Key       string

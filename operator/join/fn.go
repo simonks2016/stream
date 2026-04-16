@@ -1,7 +1,7 @@
 package join
 
 import (
-	"eventBus/stream"
+	"github.com/simonks2016/stream/stream"
 	"time"
 )
 

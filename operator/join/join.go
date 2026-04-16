@@ -2,8 +2,8 @@ package join
 
 import (
 	"context"
-	"eventBus/stream"
 	"fmt"
+	"github.com/simonks2016/stream/stream"
 	"sync"
 )
 

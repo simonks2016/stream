@@ -6,8 +6,7 @@ import (
 	"sync"
 
 	"github.com/panjf2000/ants/v2"
-
-	"eventBus/stream"
+	"github.com/simonks2016/stream/stream"
 )
 
 type task struct {

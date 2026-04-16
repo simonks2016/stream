@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"eventBus/internal/runtime"
-	"eventBus/stream"
+	"github.com/simonks2016/stream/internal/runtime"
+	"github.com/simonks2016/stream/stream"
 )
 
 func NewPipeline(ctx context.Context) stream.Pipeline {

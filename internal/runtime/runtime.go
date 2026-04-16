@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"eventBus/internal/connectorDispatch"
-	"eventBus/internal/inlineDispatch"
-	"eventBus/internal/watermark"
-	"eventBus/stream"
+	"github.com/simonks2016/stream/internal/connectorDispatch"
+	"github.com/simonks2016/stream/internal/inlineDispatch"
+	"github.com/simonks2016/stream/internal/watermark"
+	"github.com/simonks2016/stream/stream"
 
 	"github.com/panjf2000/ants/v2"
 )
