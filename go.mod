@@ -1,4 +1,4 @@
-module eventBus
+module github.com/simonks2016/stream
 
 go 1.25.0
 
