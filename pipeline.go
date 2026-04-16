@@ -1,7 +1,8 @@
-package main
+package stream
 
 import (
 	"context"
+
 	"github.com/simonks2016/stream/internal/runtime"
 	"github.com/simonks2016/stream/stream"
 )
