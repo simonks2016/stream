@@ -90,7 +90,6 @@ func (r *Runtime) Run() error {
 // - 统一更新时间推进
 // - 决定往 inline 还是 connector 发
 func (r *Runtime) sink(endpoint stream.Endpoint, msg stream.Message[any]) error {
-	msg.Endpoint = endpoint
 
 	// 统一推进 watermark
 	if r.wm != nil {
@@ -102,13 +101,13 @@ func (r *Runtime) sink(endpoint stream.Endpoint, msg stream.Message[any]) error 
 		if r.inlineDispatch == nil {
 			return fmt.Errorf("inlineDispatch is nil")
 		}
-		return r.inlineDispatch.Publish(msg)
+		return r.inlineDispatch.Publish(endpoint, msg)
 
 	case stream.ConnectorsKind:
 		if r.connectorDispatch == nil {
 			return fmt.Errorf("connectorDispatch is nil")
 		}
-		return r.connectorDispatch.Emit(r.ctx, msg)
+		return r.connectorDispatch.Emit(r.ctx, endpoint, msg)
 
 	default:
 		return fmt.Errorf("unknown endpoint kind: %v", endpoint.Kind)

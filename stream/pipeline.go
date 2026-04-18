@@ -5,5 +5,5 @@ type Pipeline interface {
 	On(topic Endpoint, handler ...Handler)
 	Start() error
 	Run() error
-	Publish(msg Message[any]) error
+	Publish(endpoint Endpoint, msg Message[any]) error
 }

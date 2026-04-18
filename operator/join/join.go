@@ -3,8 +3,10 @@ package join
 import (
 	"context"
 	"fmt"
-	"github.com/simonks2016/stream/stream"
 	"sync"
+	"time"
+
+	"github.com/simonks2016/stream/stream"
 )
 
 type JoinOperator interface {
@@ -73,50 +75,17 @@ func (j *JoinOperatorImpl) Process(
 	st, ok := j.state[key]
 	if !ok {
 		st = &State{
-			Key:    key,
-			Values: make(map[string]stream.Message[any]),
+			Key:       key,
+			Message:   []stream.Message[any]{},
+			CreatedAt: time.Now().UnixMilli(),
 		}
 		j.state[key] = st
 	}
 
-	// 4. 写入状态
-	source := j.endpointID(msg.Endpoint)
-	st.Values[source] = msg
-
-	// 5. 判断是否可以触发
-	if !j.shouldEmit(st, msg.WatermarkTs) {
-		return nil
-	}
-
-	// 6. 组装消息列表
-	msgs := make([]stream.Message[any], 0, len(st.Values))
-	for _, m := range st.Values {
-		msgs = append(msgs, m)
-	}
-
-	// 7. 调外部 join 算子
-	out, err := j.joinFn(ctx, msgs...)
-	if err != nil {
-		return err
-	}
-
-	// 8. 修正输出 endpoint
-	out.Endpoint = j.output
-
-	// 9. 发给下游
-	if err := sink(j.output, out); err != nil {
-		return err
-	}
-
-	st.Emitted = true
-
-	// 10. 清理
-	j.cleanup(msg.WatermarkTs)
-
 	return nil
 }
 
-func (j *JoinOperatorImpl) Register(p *stream.Pipeline) error {
+func (j *JoinOperatorImpl) Register(p stream.Pipeline) error {
 	handler := j.Process
 
 	for _, ep := range j.inputs {

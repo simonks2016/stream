@@ -9,6 +9,11 @@ import (
 	"github.com/simonks2016/stream/stream"
 )
 
+type TaskDetail struct {
+	To      stream.Endpoint
+	Message stream.Message[any]
+}
+
 type task struct {
 	ctx     context.Context
 	handler stream.Handler
@@ -20,7 +25,7 @@ type InlineDispatch struct {
 	mu    sync.RWMutex
 	Route map[string][]stream.Handler
 
-	msgCh chan stream.Message[any]
+	msgCh chan TaskDetail
 	pool  *ants.Pool
 }
 
@@ -31,7 +36,7 @@ func NewDispatch(bufferSize int, pool *ants.Pool) *InlineDispatch {
 
 	return &InlineDispatch{
 		Route: make(map[string][]stream.Handler),
-		msgCh: make(chan stream.Message[any], bufferSize),
+		msgCh: make(chan TaskDetail, bufferSize),
 		pool:  pool,
 	}
 }
@@ -45,9 +50,13 @@ func (d *InlineDispatch) On(topic string, handlers ...stream.Handler) {
 }
 
 // Publish 往内线投递消息
-func (d *InlineDispatch) Publish(msg stream.Message[any]) error {
+func (d *InlineDispatch) Publish(ep stream.Endpoint, msg stream.Message[any]) error {
+
 	select {
-	case d.msgCh <- msg:
+	case d.msgCh <- TaskDetail{
+		To:      ep,
+		Message: msg,
+	}:
 		return nil
 	default:
 		return fmt.Errorf("inline dispatch queue is full")
@@ -62,7 +71,7 @@ func (d *InlineDispatch) Run(ctx context.Context, sink stream.Sink) error {
 			return ctx.Err()
 
 		case msg := <-d.msgCh:
-			topic := d.topicOf(msg.Endpoint)
+			topic := d.topicOf(msg.To)
 
 			handlers := d.handlersOf(topic)
 			if len(handlers) == 0 {
@@ -75,7 +84,7 @@ func (d *InlineDispatch) Run(ctx context.Context, sink stream.Sink) error {
 
 				err := d.pool.Submit(func() {
 					// 单个 handler 错误不影响整个 dispatch
-					if err := handler(ctx, taskMsg, sink); err != nil {
+					if err := handler(ctx, taskMsg.Message, sink); err != nil {
 						fmt.Println(err)
 					}
 				})

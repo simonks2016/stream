@@ -10,6 +10,16 @@ type Endpoint struct {
 type EndpointKind int
 
 const (
-	ConnectorsKind EndpointKind = iota
+	NullEndpointKind EndpointKind = iota
+	ConnectorsKind   EndpointKind = iota
 	InlineKind
 )
+
+func NullEndpoint() Endpoint {
+
+	return Endpoint{
+		Kind:             NullEndpointKind,
+		Name:             "",
+		EndpointSourceId: "",
+	}
+}

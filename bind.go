@@ -24,9 +24,8 @@ func (k *Binding[T]) Decode(data []byte) (stream.Message[any], error) {
 	}
 
 	return stream.Message[any]{
-		Endpoint: k.to,
-		Key:      msg.Key,
-		Payload:  msg.Payload,
+		Key:     msg.Key,
+		Payload: msg.Payload,
 	}, nil
 }
 
@@ -37,9 +36,8 @@ func (k *Binding[T]) Encode(message stream.Message[any]) ([]byte, bool, error) {
 	}
 
 	raw, err := k.coder.Marshal(stream.Message[T]{
-		Endpoint: k.from,
-		Key:      message.Key,
-		Payload:  payload,
+		Key:     message.Key,
+		Payload: payload,
 	})
 	if err != nil {
 		return nil, true, fmt.Errorf("kafka encode failed: %w", err)

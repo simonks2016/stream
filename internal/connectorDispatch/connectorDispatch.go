@@ -65,8 +65,8 @@ func (d *ConnectorDispatch) Get(name string) (stream.Connector, bool) {
 }
 
 // Emit 根据 message 的 endpoint 找到对应 connector 发送
-func (d *ConnectorDispatch) Emit(ctx context.Context, msg stream.Message[any]) error {
-	connectorName := msg.Endpoint.Name
+func (d *ConnectorDispatch) Emit(ctx context.Context, endpoint stream.Endpoint, msg stream.Message[any]) error {
+	connectorName := endpoint.Name
 
 	d.mu.RLock()
 	conn, ok := d.connectorMap[connectorName]
