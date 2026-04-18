@@ -8,4 +8,17 @@ type Connector interface {
 	Name() string
 	Stop()
 	Run() error
+	On(...ConnectorBinding) Connector
+}
+
+type Coder[T any] interface {
+	Unmarshal(data []byte) (Message[T], error)
+	Marshal(message Message[T]) ([]byte, error)
+}
+
+type ConnectorBinding interface {
+	From() Endpoint
+	To() Endpoint
+	Decode(data []byte) (Message[any], error)
+	Encode(msg Message[any]) ([]byte, bool, error)
 }

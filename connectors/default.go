@@ -1,9 +1,17 @@
 package connectors
 
-import "eventBus/connectors/kafka"
+import (
+	"context"
 
-func UseKafka(brokers ...string) *kafka.KafkaConnector {
+	"github.com/simonks2016/stream/connectors/kafka"
+)
 
-	return &kafka.KafkaConnector{}
+func UseKafka(ctc context.Context, options ...kafka.Option) *kafka.KafkaConnector {
 
+	k := kafka.NewKafkaConnector()
+
+	for _, opt := range options {
+		opt(k)
+	}
+	return k
 }

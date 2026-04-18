@@ -13,23 +13,3 @@ const (
 	ConnectorsKind EndpointKind = iota
 	InlineKind
 )
-
-func Inline(name string) Endpoint {
-	return Endpoint{
-		Kind:             InlineKind,
-		Name:             name,
-		Meta:             make(map[string]any),
-		EndpointSourceId: name,
-	}
-}
-
-func Kafka(topic string) Endpoint {
-	return Endpoint{
-		Kind: ConnectorsKind,
-		Name: "kafka",
-		Meta: map[string]any{
-			"topic": topic,
-		},
-		EndpointSourceId: topic,
-	}
-}

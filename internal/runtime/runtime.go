@@ -39,8 +39,8 @@ func (r *Runtime) On(topic stream.Endpoint, handler ...stream.Handler) {
 }
 
 // Publish 允许外部主动往 runtime 投递消息
-func (r *Runtime) Publish(msg stream.Message[any]) error {
-	return r.sink(msg.Endpoint, msg)
+func (r *Runtime) Publish(endpoint stream.Endpoint, msg stream.Message[any]) error {
+	return r.sink(endpoint, msg)
 }
 
 func (r *Runtime) Start() error {
