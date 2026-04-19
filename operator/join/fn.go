@@ -72,7 +72,7 @@ func (j *JoinOperatorImpl) ready(st *State) bool {
 		return false
 	}
 	if len(st.Messages) < len(j.inputs) {
-		fmt.Println("Not enough messages")
+		fmt.Println("Not enough messages", st.Messages)
 		return false
 	}
 
