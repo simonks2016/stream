@@ -71,8 +71,6 @@ func (j *JoinOperatorImpl) process(
 	j.mu.Lock()
 	defer j.mu.Unlock()
 
-	fmt.Println(j.joinFn == nil, j.inputs)
-
 	if j.joinFn == nil {
 		return fmt.Errorf("join function is nil")
 	}
@@ -108,6 +106,8 @@ func (j *JoinOperatorImpl) process(
 	srcID := endpointID(source)
 	st.Messages[srcID] = msg
 	st.UpdatedAt = time.Now().UnixMilli()
+
+	fmt.Println(srcID)
 
 	// 5. 如果没收齐，先返回
 	if !j.ready(st) {
