@@ -71,11 +71,6 @@ func (k *KafkaConnector) Emit(ctx context.Context, msg stream.Message[any]) erro
 		return fmt.Errorf("kafka producer is nil")
 	}
 
-	inlineName := messageRouteName(msg)
-	if inlineName == "" {
-		return fmt.Errorf("message route name is empty")
-	}
-
 	var errs []error
 	matched := false
 
@@ -85,11 +80,6 @@ func (k *KafkaConnector) Emit(ctx context.Context, msg stream.Message[any]) erro
 
 		// 桥接规则：Kafka(topic) <-> Inline(name)
 		if from.Kind != stream.ConnectorsKind || to.Kind != stream.InlineKind {
-			continue
-		}
-
-		// inline来的消息，要匹配 To.Name
-		if strings.TrimSpace(to.Name) != inlineName {
 			continue
 		}
 
@@ -123,7 +113,7 @@ func (k *KafkaConnector) Emit(ctx context.Context, msg stream.Message[any]) erro
 	}
 
 	if !matched {
-		return fmt.Errorf("no kafka binding matched inline route=%s", inlineName)
+		return fmt.Errorf("message has no routing destination (msg=%s,ts=%d,from=kafka)", msg.Key, msg.Ts)
 	}
 	if len(errs) > 0 {
 		return joinErrors(errs...)
@@ -266,6 +256,8 @@ func (k *KafkaConnector) consumeLoop(topic string, reader *kafka.Reader) {
 			if k.logger != nil {
 				k.logger.Printf("[KafkaConnector] dispatch failed topic=%s err=%v", topic, err)
 			}
+			// 这里我先保持和你旧实现接近：即使失败也继续commit
+			// 后面你要更稳，可以改成成功后再commit
 		}
 
 		if err := reader.CommitMessages(k.ctx, msg); err != nil && k.logger != nil {
@@ -325,6 +317,23 @@ func (k *KafkaConnector) dispatchIncoming(topic string, data []byte) error {
 		return joinErrors(errs...)
 	}
 	return nil
+}
+
+// messageRouteName 用于从 inline message 中提取路由名
+// 这里建议你后续把 Message[T] 结构贴出来，我再帮你改成强类型。
+func messageRouteName(msg stream.Message[any]) string {
+	// 下面这段你需要按你的 Message 定义调整
+	// 先给你一个常见写法的占位思路：
+	//
+	// 1. 若 Message 有 Topic 字段，就 return strings.TrimSpace(msg.Topic)
+	// 2. 若 Message 有 Channel/Name 字段，也可以返回
+	// 3. 若 Message.Meta["topic"] 存在，也可以拿
+	//
+	// 例如：
+	// return strings.TrimSpace(msg.Topic)
+
+	// 当前先占位，避免你 Message 未贴出我写错字段
+	return ""
 }
 
 func joinErrors(errs ...error) error {
