@@ -24,7 +24,14 @@ func WrapProcessor[I any, O any](processor stream.Processor[I, O]) stream.Handle
 				reflect.TypeOf(e).Name())
 		}
 
-		ingress := stream.NewMessage[I](payload)
+		ingress := stream.Message[I]{
+			Payload:     payload,
+			Ts:          msg.Ts,
+			Key:         msg.Key,
+			WatermarkTs: msg.WatermarkTs,
+			IngestTime:  msg.IngestTime,
+			SinkTime:    msg.SinkTime,
+		}
 
 		endpoint, out, ok, err := processor.Process(ctx, ingress)
 		if err != nil {
