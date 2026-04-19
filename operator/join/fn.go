@@ -8,14 +8,17 @@ import (
 
 // 这里不自己算 watermark，只尊重上游塞进来的 WatermarkTs
 func (j *JoinOperatorImpl) isLate(msg stream.Message[any]) bool {
-	if msg.WatermarkTs == 0 {
+	// 上游没给 watermark，就不做迟到判断
+	if msg.WatermarkTs <= 0 {
 		return false
 	}
-	return msg.Ts < msg.WatermarkTs
+
+	// 当前消息事件时间 + 本层允许迟到 仍然落后于 watermark，则视为迟到
+	return msg.Ts+j.allowedLatenessMs < msg.WatermarkTs
 }
 
 func (j *JoinOperatorImpl) cleanupLocked(currentWM int64) {
-	if currentWM == 0 {
+	if currentWM <= 0 {
 		return
 	}
 
@@ -29,7 +32,7 @@ func (j *JoinOperatorImpl) cleanupLocked(currentWM int64) {
 		}
 
 		latestTs := maxStateTs(st)
-		if latestTs < currentWM {
+		if latestTs+j.allowedLatenessMs < currentWM {
 			delete(j.state, key)
 		}
 	}

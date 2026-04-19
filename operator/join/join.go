@@ -21,7 +21,8 @@ type JoinOperatorImpl struct {
 	state map[string]*State
 	mu    sync.Mutex
 
-	joinFn JoinFunc
+	joinFn            JoinFunc
+	allowedLatenessMs int64
 }
 
 func (j *JoinOperatorImpl) WithJoin(fn JoinFunc) *JoinOperatorImpl {
@@ -41,7 +42,8 @@ func (j *JoinOperatorImpl) To(endpoint stream.Endpoint) *JoinOperatorImpl {
 
 func NewJoiner(opts ...JoinOption) *JoinOperatorImpl {
 	j := JoinOperatorImpl{
-		state: make(map[string]*State),
+		state:             make(map[string]*State),
+		allowedLatenessMs: 0,
 	}
 	for _, opt := range opts {
 		opt(&j)

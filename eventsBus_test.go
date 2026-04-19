@@ -3,14 +3,11 @@ package stream
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
-	"strings"
 	"testing"
 
 	"github.com/simonks2016/stream/connectors"
 	"github.com/simonks2016/stream/connectors/kafka"
-	"github.com/simonks2016/stream/operator/join"
 	"github.com/simonks2016/stream/stream"
 )
 
@@ -55,18 +52,5 @@ func TestNewPipeline(t *testing.T) {
 	p.On(
 		Inline("evt.bookFeature.created"),
 	)
-
-	joiner := join.NewJoiner(
-		join.WithAllowedLateness(50)).From(
-		Inline("test"),
-		Inline("test2"),
-	).To(Inline("test3")).WithJoin(func(ctx context.Context, msgs ...stream.Message[any]) (stream.Message[any], error) {
-
-		var data []string
-		for _, msg := range msgs {
-			data = append(data, fmt.Sprintf("%v", msg.Payload))
-		}
-		return stream.NewMessage[any](strings.Join(data, ",")), nil
-	})
 
 }
