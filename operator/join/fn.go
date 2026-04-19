@@ -33,7 +33,6 @@ func (j *JoinOperatorImpl) cleanupLocked(currentWM int64) {
 
 		latestTs := maxStateTs(st)
 		if latestTs+j.allowedLatenessMs < currentWM {
-			fmt.Println(latestTs, currentWM, j.allowedLatenessMs+latestTs)
 			delete(j.state, key)
 		}
 	}

@@ -111,7 +111,7 @@ func (j *JoinOperatorImpl) process(
 	if !j.ready(st) {
 		fmt.Println("No Ready")
 		// 顺手清一下已经过期但拼不齐的 state
-		j.cleanupLocked(msg.WatermarkTs)
+		//j.cleanupLocked(msg.WatermarkTs)
 		return nil
 	}
 
