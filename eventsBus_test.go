@@ -42,7 +42,6 @@ func TestNewPipeline(t *testing.T) {
 			ctx,
 			kafka.WithBrokers("127.0.0.1:19092"),
 			kafka.WithGroupId("test-kafka"),
-			kafka.WithContext(context.Background()),
 			kafka.WithLogger(log.Default()),
 		).On(
 			Bind[Data](Kafka("evt.bookFeature.created"), Inline("evt.bookFeature.created"), &JSONCoder[Data]{}),
