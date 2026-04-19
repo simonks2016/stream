@@ -39,7 +39,14 @@ func WrapProcessor[I any, O any](processor stream.Processor[I, O]) stream.Handle
 		}
 
 		if ok && endpoint.Kind != stream.NullEndpointKind {
-			return sink(endpoint, stream.NewMessage[any](out))
+			return sink(endpoint, stream.Message[any]{
+				SinkTime:    out.SinkTime,
+				IngestTime:  out.IngestTime,
+				WatermarkTs: out.WatermarkTs,
+				Key:         out.Key,
+				Ts:          out.Ts,
+				Payload:     out.Payload,
+			})
 		}
 		return nil
 	}
