@@ -86,7 +86,7 @@ func (j *JoinOperatorImpl) process(
 
 	// 2. 如果这条消息本身已经晚于上游 watermark，直接丢弃
 	if j.isLate(msg) {
-		fmt.Println("Is Late", msg.Key)
+		fmt.Println("Is Late", msg.Key, msg.WatermarkTs, msg.Ts+j.allowedLatenessMs)
 		return nil
 	}
 
