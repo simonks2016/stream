@@ -6,9 +6,9 @@ import (
 	"github.com/simonks2016/stream/connectors/kafka"
 )
 
-func UseKafka(ctc context.Context, options ...kafka.Option) *kafka.KafkaConnector {
+func UseKafka(ctx context.Context, options ...kafka.Option) *kafka.KafkaConnector {
 
-	k := kafka.NewKafkaConnector()
+	k := kafka.NewKafkaConnector(ctx)
 
 	for _, opt := range options {
 		opt(k)
