@@ -71,11 +71,13 @@ func (j *JoinOperatorImpl) ready(st *State) bool {
 		return false
 	}
 	if len(st.Messages) < len(j.inputs) {
+		fmt.Println("No Ready", len(st.Messages), len(j.inputs))
 		return false
 	}
 
 	for _, ep := range j.inputs {
 		if _, ok := st.Messages[endpointID(ep)]; !ok {
+			fmt.Println("No Ready", endpointID(ep), st.Messages)
 			return false
 		}
 	}

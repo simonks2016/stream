@@ -107,10 +107,9 @@ func (j *JoinOperatorImpl) process(
 	st.Messages[srcID] = msg
 	st.UpdatedAt = time.Now().UnixMilli()
 
-	fmt.Println(srcID)
-
 	// 5. 如果没收齐，先返回
 	if !j.ready(st) {
+		fmt.Println("No Ready")
 		// 顺手清一下已经过期但拼不齐的 state
 		j.cleanupLocked(msg.WatermarkTs)
 		return nil
