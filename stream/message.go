@@ -1,6 +1,7 @@
 package stream
 
 import (
+	"github.com/google/uuid"
 	"reflect"
 	"time"
 )
@@ -14,21 +15,30 @@ type Message[T any] struct {
 	Key         string `json:"key"`
 }
 
-func NewMessage[T any](data T) Message[T] {
+type MessageOption[T any] func(*Message[T])
+
+func NewMessage[T any](data T, opts ...MessageOption[T]) Message[T] {
 	now := time.Now().UnixMilli()
 
-	return Message[T]{
+	m := Message[T]{
 		Ts:          now,
 		IngestTime:  now,
 		WatermarkTs: now,
 		SinkTime:    0,
 		Payload:     data,
 	}
-}
-func (m *Message[data]) WithWatermarkTs(watermarkTs int64) *Message[data] {
-	m.WatermarkTs = watermarkTs
+
+	if len(opts) > 0 {
+		for _, opt := range opts {
+			opt(&m)
+		}
+	}
+	if len(m.Key) <= 0 {
+		m.Key = uuid.New().String()
+	}
 	return m
 }
+
 func (m *Message[data]) Finish() *Message[data] {
 	m.SinkTime = time.Now().UnixMilli()
 	return m
@@ -37,9 +47,17 @@ func (m *Message[data]) Start() *Message[data] {
 	m.IngestTime = time.Now().UnixMilli()
 	return m
 }
-func (m *Message[T]) WithTs(ts int64) *Message[T] {
-	m.Ts = ts
-	return m
+
+func WithTs[T any](ts int64) MessageOption[T] {
+	return func(m *Message[T]) {
+		m.Ts = ts
+	}
+}
+
+func WithKey[T any](key string) MessageOption[T] {
+	return func(m *Message[T]) {
+		m.Key = key
+	}
 }
 
 // DeriveMessage 派生消息
