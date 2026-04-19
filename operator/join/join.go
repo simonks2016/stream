@@ -71,6 +71,8 @@ func (j *JoinOperatorImpl) process(
 	j.mu.Lock()
 	defer j.mu.Unlock()
 
+	fmt.Println(j.joinFn == nil, j.inputs)
+
 	if j.joinFn == nil {
 		return fmt.Errorf("join function is nil")
 	}
@@ -86,6 +88,7 @@ func (j *JoinOperatorImpl) process(
 
 	// 2. 如果这条消息本身已经晚于上游 watermark，直接丢弃
 	if j.isLate(msg) {
+		fmt.Println(msg)
 		return nil
 	}
 
