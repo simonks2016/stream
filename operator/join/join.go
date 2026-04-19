@@ -120,6 +120,7 @@ func (j *JoinOperatorImpl) process(
 	for _, ep := range j.inputs {
 		m, ok := st.Messages[endpointID(ep)]
 		if !ok {
+			fmt.Println("No Message")
 			return nil
 		}
 		msgs = append(msgs, m)
@@ -128,6 +129,7 @@ func (j *JoinOperatorImpl) process(
 	// 7. 执行 join
 	out, err := j.joinFn(ctx, msgs...)
 	if err != nil {
+		fmt.Println("Join Error:", err)
 		return err
 	}
 
@@ -142,6 +144,7 @@ func (j *JoinOperatorImpl) process(
 
 	// 9. 发到下游
 	if err := sink(j.output, out); err != nil {
+		fmt.Println("Sink Error:", err)
 		return err
 	}
 
