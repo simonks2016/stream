@@ -1,6 +1,9 @@
 package stream
 
-import "time"
+import (
+	"reflect"
+	"time"
+)
 
 type Message[T any] struct {
 	Ts          int64  `json:"ts"`
@@ -60,4 +63,8 @@ func EmptyMessage[T any]() Message[T] {
 		WatermarkTs: 0,
 		SinkTime:    0,
 	}
+}
+
+func (e Message[T]) IsEmpty() bool {
+	return e.Ts == 0 && e.IngestTime == 0 && e.WatermarkTs == 0 && reflect.ValueOf(e.Payload).IsNil()
 }

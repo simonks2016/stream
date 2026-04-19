@@ -171,10 +171,11 @@ func (k *KafkaConnector) runLocked() error {
 			continue
 		}
 
-		topic := strings.TrimSpace(from.Name)
-		if topic == "" {
+		topic, ok := from.Meta["topic"].(string)
+		if !ok || len(topic) <= 0 {
 			continue
 		}
+
 		if _, exists := k.readers[topic]; exists {
 			continue
 		}
