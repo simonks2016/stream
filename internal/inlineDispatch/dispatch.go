@@ -82,6 +82,8 @@ func (d *InlineDispatch) Run(ctx context.Context, sink stream.Sink) error {
 				handler := h
 				taskMsg := msg // 拷贝一份，避免闭包误用同一个变量
 
+				fmt.Println(taskMsg.Message)
+
 				err := d.pool.Submit(func() {
 					// 单个 handler 错误不影响整个 dispatch
 					if err := handler(ctx, taskMsg.Message, sink); err != nil {
