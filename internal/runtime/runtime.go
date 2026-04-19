@@ -96,6 +96,8 @@ func (r *Runtime) sink(endpoint stream.Endpoint, msg stream.Message[any]) error 
 		msg.WatermarkTs = r.wm.Update(endpoint.EndpointSourceId, msg.Ts)
 	}
 
+	fmt.Println(msg)
+
 	switch endpoint.Kind {
 	case stream.InlineKind:
 		if r.inlineDispatch == nil {
