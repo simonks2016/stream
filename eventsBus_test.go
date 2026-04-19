@@ -29,6 +29,10 @@ func (j *JSONCoder[T]) Marshal(msg stream.Message[T]) ([]byte, error) {
 	return json.Marshal(msg.Payload)
 }
 
+func (j *JSONCoder[T]) Key() string {
+	return ""
+}
+
 func TestNewPipeline(t *testing.T) {
 
 	type Data struct{}

@@ -86,7 +86,6 @@ func (j *JoinOperatorImpl) process(
 
 	// 2. 如果这条消息本身已经晚于上游 watermark，直接丢弃
 	if j.isLate(msg) {
-		fmt.Println(msg)
 		return nil
 	}
 
@@ -111,7 +110,7 @@ func (j *JoinOperatorImpl) process(
 	if !j.ready(st) {
 
 		// 顺手清一下已经过期但拼不齐的 state
-		//j.cleanupLocked(msg.WatermarkTs)
+		j.cleanupLocked(msg.WatermarkTs)
 		return nil
 	}
 
@@ -132,7 +131,7 @@ func (j *JoinOperatorImpl) process(
 		fmt.Println("Join Error:", err)
 		return err
 	}
-	
+
 	out.SinkTime = time.Now().UnixMilli()
 
 	// 输出消息的 WatermarkTs 可沿用本轮 join 输入中的最小 watermark

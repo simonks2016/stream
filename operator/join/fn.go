@@ -68,20 +68,16 @@ func endpointID(ep stream.Endpoint) string {
 
 func (j *JoinOperatorImpl) ready(st *State) bool {
 	if st == nil {
-		fmt.Println("Empty state")
 		return false
 	}
 	if len(st.Messages) < len(j.inputs) {
-		fmt.Println("Not enough messages", st.Messages)
 		return false
 	}
 
 	for _, ep := range j.inputs {
 		if _, ok := st.Messages[endpointID(ep)]; !ok {
-			fmt.Println("Not enough messages")
 			return false
 		}
 	}
-	fmt.Println("Ready")
 	return true
 }
