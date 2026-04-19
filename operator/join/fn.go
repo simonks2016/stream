@@ -63,7 +63,7 @@ func maxStateTs(st *State) int64 {
 }
 
 func endpointID(ep stream.Endpoint) string {
-	return fmt.Sprintf("%d:%s:%s", ep.Kind, ep.EndpointSourceId, ep.Name)
+	return fmt.Sprintf("%s", ep.EndpointSourceId)
 }
 
 func (j *JoinOperatorImpl) ready(st *State) bool {

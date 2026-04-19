@@ -109,7 +109,7 @@ func (j *JoinOperatorImpl) process(
 
 	// 5. 如果没收齐，先返回
 	if !j.ready(st) {
-		fmt.Println("No Ready")
+
 		// 顺手清一下已经过期但拼不齐的 state
 		//j.cleanupLocked(msg.WatermarkTs)
 		return nil
@@ -132,11 +132,7 @@ func (j *JoinOperatorImpl) process(
 		fmt.Println("Join Error:", err)
 		return err
 	}
-
-	// 8. 补输出字段
-	if out.Key == "" {
-		out.Key = key
-	}
+	
 	out.SinkTime = time.Now().UnixMilli()
 
 	// 输出消息的 WatermarkTs 可沿用本轮 join 输入中的最小 watermark
