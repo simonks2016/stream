@@ -16,10 +16,12 @@ func WrapProcessor[I any, O any](processor stream.Processor[I, O]) stream.Handle
 		}
 		payload, ok := msg.Payload.(I)
 		if !ok {
+			var e I
 			return fmt.Errorf(
-				"payload type mismatch, key=%s,input_type_name=%s",
+				"payload type mismatch, key=%s,input_type_name=%s,output_type_name=%s",
 				msg.Key,
-				reflect.TypeOf(msg.Payload).Name())
+				reflect.TypeOf(msg.Payload).Name(),
+				reflect.TypeOf(e).Name())
 		}
 
 		ingress := stream.NewMessage[I](payload)
