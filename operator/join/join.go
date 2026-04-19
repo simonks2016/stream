@@ -13,6 +13,7 @@ type JoinOperator interface {
 	Process(ctx context.Context, msg ...stream.Message[any]) (stream.Message[any], error)
 }
 type JoinFunc func(ctx context.Context, msgs ...stream.Message[any]) (stream.Message[any], error)
+type JoinWindowKey func(stream.Message[any]) (key string, windowStartMs int64, windowEndMs int64)
 
 type JoinOperatorImpl struct {
 	inputs []stream.Endpoint
@@ -22,7 +23,9 @@ type JoinOperatorImpl struct {
 	mu    sync.Mutex
 
 	joinFn            JoinFunc
+	windowKey         JoinWindowKey
 	allowedLatenessMs int64
+	windowDurationMS  int64
 }
 
 func (j *JoinOperatorImpl) WithJoin(fn JoinFunc) *JoinOperatorImpl {
@@ -44,24 +47,13 @@ func NewJoiner(opts ...JoinOption) *JoinOperatorImpl {
 	j := JoinOperatorImpl{
 		state:             make(map[string]*State),
 		allowedLatenessMs: 0,
+		windowDurationMS:  1000,
 	}
 	for _, opt := range opts {
 		opt(&j)
 	}
 	return &j
 }
-
-/*
-func (j *JoinOperatorImpl) Process(
-	ctx context.Context,
-	msgs ...stream.Message[any],
-) (stream.Message[any], error) {
-	if j.joinFn == nil {
-		return stream.EmptyMessage[any](), fmt.Errorf("join function is nil")
-	}
-	return j.joinFn(ctx, msgs...)
-}*/
-
 func (j *JoinOperatorImpl) process(
 	ctx context.Context,
 	source stream.Endpoint,
@@ -79,7 +71,15 @@ func (j *JoinOperatorImpl) process(
 	}
 
 	// 1. key 校验
-	key := msg.Key
+	key := ""
+	if j.windowKey != nil {
+		keyId, startMs, endMs := j.windowKey(msg)
+		key = fmt.Sprintf("%s:%d:%d", keyId, startMs, endMs)
+	} else {
+		windowStart := (msg.Ts / j.windowDurationMS) * j.windowDurationMS
+		windowEnd := windowStart + j.windowDurationMS
+		key = fmt.Sprintf("%d:%d", windowStart, windowEnd)
+	}
 	if key == "" {
 		return fmt.Errorf("message key is empty")
 	}
@@ -177,4 +177,8 @@ func (j *JoinOperatorImpl) Register(p stream.Pipeline) error {
 		p.On(ep, handler)
 	}
 	return nil
+}
+func (j *JoinOperatorImpl) WithWindowKey(fn JoinWindowKey) *JoinOperatorImpl {
+	j.windowKey = fn
+	return j
 }
