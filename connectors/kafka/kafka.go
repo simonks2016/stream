@@ -294,6 +294,8 @@ func (k *KafkaConnector) dispatchIncoming(topic string, data []byte) error {
 
 		if strings.TrimSpace(settingTopic) != topic {
 			continue
+		} else {
+			fmt.Println(settingTopic, topic)
 		}
 
 		matched = true
@@ -317,23 +319,6 @@ func (k *KafkaConnector) dispatchIncoming(topic string, data []byte) error {
 		return joinErrors(errs...)
 	}
 	return nil
-}
-
-// messageRouteName 用于从 inline message 中提取路由名
-// 这里建议你后续把 Message[T] 结构贴出来，我再帮你改成强类型。
-func messageRouteName(msg stream.Message[any]) string {
-	// 下面这段你需要按你的 Message 定义调整
-	// 先给你一个常见写法的占位思路：
-	//
-	// 1. 若 Message 有 Topic 字段，就 return strings.TrimSpace(msg.Topic)
-	// 2. 若 Message 有 Channel/Name 字段，也可以返回
-	// 3. 若 Message.Meta["topic"] 存在，也可以拿
-	//
-	// 例如：
-	// return strings.TrimSpace(msg.Topic)
-
-	// 当前先占位，避免你 Message 未贴出我写错字段
-	return ""
 }
 
 func joinErrors(errs ...error) error {
