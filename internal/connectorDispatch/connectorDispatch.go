@@ -76,7 +76,7 @@ func (d *ConnectorDispatch) Emit(ctx context.Context, endpoint stream.Endpoint, 
 		return fmt.Errorf("connector not found: %s", connectorName)
 	}
 
-	return conn.Emit(ctx, msg)
+	return conn.Emit(ctx, endpoint, msg)
 }
 
 // Run 启动所有 connector

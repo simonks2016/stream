@@ -63,7 +63,7 @@ func (k *KafkaConnector) Ingest(ctx context.Context, sink stream.Sink) error {
 	return k.runLocked()
 }
 
-func (k *KafkaConnector) Emit(ctx context.Context, msg stream.Message[any]) error {
+func (k *KafkaConnector) Emit(ctx context.Context, target stream.Endpoint, msg stream.Message[any]) error {
 	k.mu.RLock()
 	defer k.mu.RUnlock()
 
@@ -80,6 +80,22 @@ func (k *KafkaConnector) Emit(ctx context.Context, msg stream.Message[any]) erro
 
 		// 桥接规则：Kafka(topic) <-> Inline(name)
 		if from.Kind != stream.ConnectorsKind || to.Kind != stream.InlineKind {
+			continue
+		} else if strings.ToLower(from.Name) != "kafka" {
+			continue
+		}
+
+		targetTopic, ok := target.Meta["topic"].(string)
+		if !ok {
+			continue
+		}
+
+		topic, ok := from.Meta["topic"].(string)
+		if !ok {
+			continue
+		}
+
+		if strings.ToLower(targetTopic) != strings.ToLower(topic) {
 			continue
 		}
 
@@ -103,7 +119,7 @@ func (k *KafkaConnector) Emit(ctx context.Context, msg stream.Message[any]) erro
 		}
 
 		err = k.producer.WriteMessages(writeCtx, kafka.Message{
-			Topic: from.Name,
+			Topic: topic,
 			Value: payload,
 			Time:  time.Now(),
 		})
@@ -294,8 +310,6 @@ func (k *KafkaConnector) dispatchIncoming(topic string, data []byte) error {
 
 		if strings.TrimSpace(settingTopic) != topic {
 			continue
-		} else {
-			fmt.Println(settingTopic, topic)
 		}
 
 		matched = true
