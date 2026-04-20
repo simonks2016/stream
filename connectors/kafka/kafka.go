@@ -82,7 +82,7 @@ func (k *KafkaConnector) Emit(ctx context.Context, target stream.Endpoint, msg s
 		to := binding.To()
 
 		// 桥接规则：Kafka(topic) <-> Inline(name)
-		if IsKafkaToInlineMatch(from, to, target) {
+		if !IsKafkaToInlineMatch(from, to, target) {
 			continue
 		}
 
