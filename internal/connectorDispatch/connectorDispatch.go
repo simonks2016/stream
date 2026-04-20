@@ -71,11 +71,10 @@ func (d *ConnectorDispatch) Emit(ctx context.Context, endpoint stream.Endpoint, 
 	d.mu.RLock()
 	conn, ok := d.connectorMap[connectorName]
 	d.mu.RUnlock()
-
+	// if the connector is not exist
 	if !ok {
 		return fmt.Errorf("connector not found: %s", connectorName)
 	}
-
 	return conn.Emit(ctx, endpoint, msg)
 }
 

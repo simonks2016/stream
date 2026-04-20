@@ -75,27 +75,14 @@ func (k *KafkaConnector) Emit(ctx context.Context, target stream.Endpoint, msg s
 	matched := false
 
 	for _, binding := range k.bindings {
+		if binding.Mode() == stream.ReadOnly {
+			continue
+		}
 		from := binding.From()
 		to := binding.To()
 
 		// 桥接规则：Kafka(topic) <-> Inline(name)
-		if from.Kind != stream.ConnectorsKind || to.Kind != stream.InlineKind {
-			continue
-		} else if strings.ToLower(from.Name) != "kafka" {
-			continue
-		}
-
-		targetTopic, ok := target.Meta["topic"].(string)
-		if !ok {
-			continue
-		}
-
-		topic, ok := from.Meta["topic"].(string)
-		if !ok {
-			continue
-		}
-
-		if strings.ToLower(targetTopic) != strings.ToLower(topic) {
+		if IsKafkaToInlineMatch(from, to, target) {
 			continue
 		}
 
@@ -119,7 +106,7 @@ func (k *KafkaConnector) Emit(ctx context.Context, target stream.Endpoint, msg s
 		}
 
 		err = k.producer.WriteMessages(writeCtx, kafka.Message{
-			Topic: topic,
+			Topic: fmt.Sprintf("%v", target.Meta["topic"]),
 			Value: payload,
 			Time:  time.Now(),
 		})
@@ -170,6 +157,9 @@ func (k *KafkaConnector) runLocked() error {
 
 	// 只为 Kafka <-/-> Inline 的 binding 创建 reader
 	for _, binding := range k.bindings {
+		if binding.Mode() == stream.WriteOnly {
+			continue
+		}
 		from := binding.From()
 		to := binding.To()
 
@@ -296,6 +286,10 @@ func (k *KafkaConnector) dispatchIncoming(topic string, data []byte) error {
 	matched := false
 
 	for _, binding := range bindings {
+		if binding.Mode() == stream.WriteOnly {
+			continue
+		}
+
 		from := binding.From()
 		to := binding.To()
 
@@ -355,4 +349,31 @@ func joinErrors(errs ...error) error {
 		sb.WriteString(fmt.Sprintf(" [%d] %v;", i+1, err))
 	}
 	return errors.New(sb.String())
+}
+
+func IsKafkaToInlineMatch(from, to, target stream.Endpoint) bool {
+
+	if from.Kind != stream.ConnectorsKind && to.Kind != stream.ConnectorsKind {
+		return false
+	} else if target.Kind == stream.InlineKind {
+		return false
+	}
+
+	var sample = func() stream.Endpoint {
+		if from.Kind == stream.ConnectorsKind {
+			return from
+		}
+		return to
+	}()
+	if strings.ToLower(sample.Name) != "kafka" {
+		return false
+	}
+
+	fromTopic, ok1 := sample.Meta["topic"].(string)
+	toTopic, ok2 := target.Meta["topic"].(string)
+
+	if !ok1 || !ok2 {
+		return false
+	}
+	return strings.EqualFold(fromTopic, toTopic)
 }

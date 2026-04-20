@@ -48,7 +48,7 @@ func TestNewPipeline(t *testing.T) {
 			kafka.WithGroupId("test-kafka"),
 			kafka.WithLogger(log.Default()),
 		).On(
-			Bind[Data](Kafka("evt.bookFeature.created"), Inline("evt.bookFeature.created"), &JSONCoder[Data]{}),
+			Bind[Data](Kafka("evt.bookFeature.created"), Inline("evt.bookFeature.created"), &JSONCoder[Data]{}, WithBindingMode[Data](stream.ReadOnly)),
 			Bind[Data](Kafka("evt.tradeFeature.created"), Inline("evt.tradeFeature.created"), &JSONCoder[Data]{}),
 		),
 	)
