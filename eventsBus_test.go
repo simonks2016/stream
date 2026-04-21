@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"testing"
+	"time"
 
 	"github.com/simonks2016/stream/connectors"
 	"github.com/simonks2016/stream/connectors/kafka"
@@ -56,5 +57,14 @@ func TestNewPipeline(t *testing.T) {
 	p.On(
 		Inline("evt.bookFeature.created"),
 	)
+
+	NewScheduler().On(
+		WrapSchedulerJob(
+			WithInterval(time.Second),
+			WithName("schedular"),
+			WithTargetEndPoint(Kafka("")),
+			WithMessageFactory[string](func() stream.Message[string] { return stream.NewMessage[string]("OK") }),
+		),
+	).Register(p).Run(ctx)
 
 }
