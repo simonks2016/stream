@@ -2,7 +2,9 @@ package stream
 
 import (
 	"fmt"
+	"strings"
 
+	w1 "github.com/simonks2016/stream/connectors/websocket"
 	"github.com/simonks2016/stream/stream"
 )
 
@@ -79,4 +81,15 @@ func WithBindingMode[T any](m stream.BindingMode) BindingOption[T] {
 	return func(binding *Binding[T]) {
 		binding.mode = m
 	}
+}
+
+func WsSubscribe(
+	from stream.Endpoint,
+	to stream.Endpoint,
+) w1.WSSubscriptionBinding {
+	if strings.TrimSpace(from.Name) == "" {
+		panic("websocket binding key is empty: endpoint name is required")
+	}
+
+	return w1.NewWsSubscribeBinding(from, to, stream.ReadWrite)
 }

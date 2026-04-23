@@ -3,6 +3,7 @@ package connectorDispatch
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 
 	"github.com/panjf2000/ants/v2"
@@ -21,12 +22,14 @@ type ConnectorDispatch struct {
 
 	startOnce sync.Once
 	stopOnce  sync.Once
+	logger    *log.Logger
 }
 
 func NewConnectorDispatch(pool *ants.Pool) *ConnectorDispatch {
 	return &ConnectorDispatch{
 		connectorMap: make(map[string]stream.Connector),
 		pool:         pool,
+		logger:       log.Default(),
 	}
 }
 
@@ -78,7 +81,6 @@ func (d *ConnectorDispatch) Emit(ctx context.Context, endpoint stream.Endpoint, 
 	return conn.Emit(ctx, endpoint, msg)
 }
 
-// Run 启动所有 connector
 func (d *ConnectorDispatch) Run(ctx context.Context, sink stream.Sink) error {
 	var runErr error
 
@@ -95,25 +97,27 @@ func (d *ConnectorDispatch) Run(ctx context.Context, sink stream.Sink) error {
 		for _, c := range connectors {
 			conn := c
 
-			// 1. 启动 Run()
 			d.wg.Add(1)
 			if err := d.submit(func() {
 				defer d.wg.Done()
-				_ = conn.Run()
-			}); err != nil {
-				d.wg.Done()
-				runErr = fmt.Errorf("submit connector Run failed: %s, err=%w", conn.Name(), err)
-				return
-			}
 
-			// 2. 启动 Ingest()
-			d.wg.Add(1)
-			if err := d.submit(func() {
-				defer d.wg.Done()
-				_ = conn.Ingest(d.ctx, sink)
+				// ✅ 1. 先注入 sink
+				if err := conn.Ingest(d.ctx, sink); err != nil {
+					if d.logger != nil {
+						d.logger.Printf("connector ingest failed: %s, err=%v", conn.Name(), err)
+					}
+					return
+				}
+
+				// ✅ 2. 再启动运行
+				if err := conn.Run(); err != nil {
+					if d.logger != nil {
+						d.logger.Printf("connector run failed: %s, err=%v", conn.Name(), err)
+					}
+				}
 			}); err != nil {
 				d.wg.Done()
-				runErr = fmt.Errorf("submit connector Ingest failed: %s, err=%w", conn.Name(), err)
+				runErr = fmt.Errorf("submit connector start failed: %s, err=%w", conn.Name(), err)
 				return
 			}
 		}
