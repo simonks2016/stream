@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"log"
+	"time"
 )
 
 type Option func(*KafkaConnector)
@@ -20,5 +21,26 @@ func WithGroupId(id string) Option {
 func WithLogger(logger *log.Logger) Option {
 	return func(connector *KafkaConnector) {
 		connector.logger = logger
+	}
+}
+
+// WithBatchSize 设置批次大小
+func WithBatchSize(batchSize int) Option {
+	return func(connector *KafkaConnector) {
+		connector.batchSize = batchSize
+	}
+}
+
+// WithAsync 设置是否异步
+func WithAsync(async bool) Option {
+	return func(connector *KafkaConnector) {
+		connector.async = async
+	}
+}
+
+// WithBatchTimeout 设置批次时间
+func WithBatchTimeout(batchTimeout time.Duration) Option {
+	return func(connector *KafkaConnector) {
+		connector.batchTimeout = batchTimeout
 	}
 }

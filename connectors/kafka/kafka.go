@@ -31,6 +31,10 @@ type KafkaConnector struct {
 	wg      sync.WaitGroup
 	started bool
 	logger  *log.Logger
+
+	batchTimeout time.Duration
+	batchSize    int
+	async        bool
 }
 
 func NewKafkaConnector(parent context.Context) *KafkaConnector {
@@ -38,13 +42,16 @@ func NewKafkaConnector(parent context.Context) *KafkaConnector {
 	ctx, cancel := context.WithCancel(parent)
 
 	return &KafkaConnector{
-		Brokers:  []string{"localhost:9092"},
-		GroupId:  "",
-		ctx:      ctx,
-		cancel:   cancel,
-		readers:  make(map[string]*kafka.Reader),
-		bindings: make([]stream.ConnectorBinding, 0, 8),
-		logger:   log.Default(),
+		Brokers:      []string{"localhost:9092"},
+		GroupId:      "",
+		ctx:          ctx,
+		cancel:       cancel,
+		readers:      make(map[string]*kafka.Reader),
+		bindings:     make([]stream.ConnectorBinding, 0, 8),
+		logger:       log.Default(),
+		batchTimeout: time.Millisecond * time.Duration(50),
+		batchSize:    100,
+		async:        true,
 	}
 }
 
@@ -149,9 +156,9 @@ func (k *KafkaConnector) runLocked() error {
 		Addr:         kafka.TCP(k.Brokers...),
 		Balancer:     &kafka.LeastBytes{},
 		RequiredAcks: kafka.RequireOne,
-		Async:        false,
-		BatchSize:    100,
-		BatchTimeout: 50 * time.Millisecond,
+		Async:        k.async,
+		BatchSize:    k.batchSize,
+		BatchTimeout: k.batchTimeout,
 		Compression:  kafka.Snappy,
 	}
 
