@@ -2,6 +2,7 @@ package stream
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	w1 "github.com/simonks2016/stream/connectors/websocket"
@@ -48,7 +49,7 @@ func (k *Binding[T]) Decode(data []byte) (stream.Message[any], error) {
 func (k *Binding[T]) Encode(message stream.Message[any]) ([]byte, bool, error) {
 	payload, ok := message.Payload.(T)
 	if !ok {
-		return nil, false, nil
+		return nil, false, fmt.Errorf("the payload is not T,is %s", reflect.TypeOf(message.Payload).String())
 	}
 
 	raw, err := k.coder.Marshal(stream.Message[T]{
