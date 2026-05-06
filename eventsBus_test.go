@@ -4,14 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
-	"strings"
 	"testing"
 	"time"
 
-	w3 "github.com/gorilla/websocket"
 	"github.com/simonks2016/stream/connectors"
-	"github.com/simonks2016/stream/connectors/websocket"
 	"github.com/simonks2016/stream/stream"
 )
 
@@ -49,77 +45,35 @@ func TestNewPipeline(t *testing.T) {
 	p := NewPipeline(ctx)
 
 	p.AddConnector(
-		connectors.UseWebsocket(ctx,
-			"ws://127.0.0.1:8765",
-			websocket.WithOnConnected(func(ctx context.Context, conn *w3.Conn) error {
+		connectors.UseHttp(ctx).On(
+			Bind[map[string]any](
+				HttpPost("http://127.0.0.1:8080/test"),
+				Inline("evt.inference.complete"),
+				&HttpCoder{},
+			)))
 
-				var d1 = make(map[string]any)
-				d1["user"] = "111"
-				d1["op"] = "login"
-				d1["password"] = "OK"
-
-				if data, err := json.Marshal(d1); err != nil {
-					return nil
-				} else {
-					return conn.WriteMessage(w3.TextMessage, data)
-				}
-			}),
-			websocket.WithOnDispatch(func(in stream.Message[map[string]any]) *string {
-
-				op, ok := in.Payload["op"].(string)
-				if !ok {
-					return nil
-				}
-				switch strings.ToLower(op) {
-				case strings.ToLower("order"):
-					return NewStringPtr("order.place")
-				case strings.ToLower("positionAndBalance"):
-					return NewStringPtr("positionAndBalance")
-				default:
-					return nil
-				}
-			}),
-		).On(
-			WsSubscribe(
-				WebSocket("positionAndBalance",
-					WithWebSocketParams(map[string]any{
-						"user":   "111",
-						"op":     "positionAndBalance",
-						"symbol": "BTC-USDT",
-					})),
-				Inline("evt.positionAndBalance.updated")),
-			WsSubscribe(
-				WebSocket("order.place"),
-				Inline("evt.order.placed")),
-		),
-	)
 	p.On(
-		Inline("sevt.data.get"),
+		Inline("evt.inference.complete"),
 		WrapProcessor[string, map[string]any](&Test1{}),
 	)
 
-	p.On(
-		Inline("evt.positionAndBalance.updated"),
-		WrapProcessor[map[string]any, string](&Test2{}),
-	)
-	p.On(
-		Inline("evt.order.placed"),
-		WrapProcessor[map[string]any, string](&Test2{}),
-	)
+	go func() {
+		time.Sleep(2 * time.Second)
 
-	NewScheduler().On(
-		WrapSchedulerJob(
-			WithInterval(time.Minute),
-			WithName("schedular"),
-			WithTargetEndPoint(Inline("sevt.data.get")),
-			WithMessageFactory[string](func() stream.Message[string] { return stream.NewMessage[string]("OK") }),
-		),
-	).Register(p).Run(ctx)
+		if err := p.Publish(
+			HttpPost("http://127.0.0.1:8080/test"),
+			stream.NewMessage[any](
+				map[string]any{
+					"symbol": "BTC-USDT",
+				}),
+		); err != nil {
+			t.Fatal(err)
+		}
 
-	if err := p.Run(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	}()
+
+	_ = p.Run()
+
 }
 
 type HttpCoder struct{}
