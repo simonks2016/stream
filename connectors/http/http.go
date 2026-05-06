@@ -283,6 +283,7 @@ func (h *HttpConnector) doRequest(
 				h.emitError(errEP, reqMsg, requestID, fmt.Errorf("encode request failed: %w", err), httpEP)
 				return
 			}
+			fmt.Println(payload)
 			body = bytes.NewReader(payload)
 		} else {
 			h.emitError(errEP, reqMsg, requestID, fmt.Errorf("the encode funcation is null"), httpEP)
