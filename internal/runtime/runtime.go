@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/simonks2016/stream/internal/connectorDispatch"
 	"github.com/simonks2016/stream/internal/inlineDispatch"
@@ -17,6 +18,7 @@ type Runtime struct {
 	wm                *watermark.Watermark
 	inlineDispatch    *inlineDispatch.InlineDispatch
 	connectorDispatch *connectorDispatch.ConnectorDispatch
+	logger            *log.Logger
 }
 
 func (r *Runtime) AddConnector(connectors ...stream.Connector) {
@@ -114,17 +116,22 @@ func (r *Runtime) sink(endpoint stream.Endpoint, msg stream.Message[any]) error 
 	}
 }
 
-func NewRuntime(ctx context.Context, allowedLateness int64) *Runtime {
+func NewRuntime(ctx context.Context, allowedLateness int64, opts ...Option) *Runtime {
 	pool, err := ants.NewPool(
 		100)
 	if err != nil {
 		panic(err)
 	}
 
-	return &Runtime{
+	r := &Runtime{
 		ctx:               ctx,
 		wm:                watermark.NewWatermark(allowedLateness),
 		inlineDispatch:    inlineDispatch.NewDispatch(1024, pool),
 		connectorDispatch: connectorDispatch.NewConnectorDispatch(pool),
 	}
+
+	for _, opt := range opts {
+		opt(r)
+	}
+	return r
 }

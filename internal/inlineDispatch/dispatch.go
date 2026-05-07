@@ -3,6 +3,7 @@ package inlineDispatch
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 
 	"github.com/panjf2000/ants/v2"
@@ -25,20 +26,26 @@ type InlineDispatch struct {
 	mu    sync.RWMutex
 	Route map[string][]stream.Handler
 
-	msgCh chan TaskDetail
-	pool  *ants.Pool
+	msgCh  chan TaskDetail
+	pool   *ants.Pool
+	logger *log.Logger
 }
 
-func NewDispatch(bufferSize int, pool *ants.Pool) *InlineDispatch {
+func NewDispatch(bufferSize int, pool *ants.Pool, opts ...Option) *InlineDispatch {
 	if bufferSize <= 0 {
 		bufferSize = 1024
 	}
 
-	return &InlineDispatch{
+	i := &InlineDispatch{
 		Route: make(map[string][]stream.Handler),
 		msgCh: make(chan TaskDetail, bufferSize),
 		pool:  pool,
 	}
+
+	for _, opt := range opts {
+		opt(i)
+	}
+	return i
 }
 
 // On 注册某个 inline topic 对应的 handler
@@ -85,12 +92,19 @@ func (d *InlineDispatch) Run(ctx context.Context, sink stream.Sink) error {
 				err := d.pool.Submit(func() {
 					// 单个 handler 错误不影响整个 dispatch
 					if err := handler(ctx, taskMsg.Message, sink); err != nil {
-						fmt.Println(err)
+						if d.logger != nil {
+							d.logger.Println(err)
+						} else {
+							fmt.Println(err)
+						}
 					}
 				})
 				if err != nil {
-					// pool 满了或已关闭时，按你的风格先忽略
-					// 后面你可以加日志 / metrics / fallback
+					if d.logger != nil {
+						d.logger.Println("the task queue is full")
+					} else {
+						fmt.Println("the task queue is full")
+					}
 					continue
 				}
 
@@ -117,4 +131,9 @@ func (d *InlineDispatch) handlersOf(topic string) []stream.Handler {
 // topicOf 从 endpoint 中解析 inline topic
 func (d *InlineDispatch) topicOf(ep stream.Endpoint) string {
 	return ep.Name
+}
+
+// SetLogger 设置logger
+func (d *InlineDispatch) SetLogger(logger *log.Logger) {
+	d.logger = logger
 }

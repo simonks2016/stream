@@ -2,6 +2,7 @@ package stream
 
 import (
 	"context"
+	"log"
 
 	"github.com/simonks2016/stream/internal/runtime"
 	"github.com/simonks2016/stream/stream"
@@ -21,7 +22,7 @@ func NewPipeline(ctx context.Context, opts ...PipelineOption) stream.Pipeline {
 			}
 		}
 	}
-	return runtime.NewRuntime(ctx, allowed_lateness)
+	return runtime.NewRuntime(ctx, allowed_lateness, runtime.WithLogger(log.Default()))
 }
 
 type PipelineOption interface {
