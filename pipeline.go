@@ -45,7 +45,6 @@ func (o customPipelineOption) Value() interface{} {
 func NewPipelineOption(name string, value interface{}) PipelineOption {
 	return customPipelineOption{name, value}
 }
-
 func WithAllowedLateness(ms int64) PipelineOption {
 	return NewPipelineOption("allowed_lateness", ms)
 }

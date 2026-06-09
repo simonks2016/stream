@@ -89,6 +89,12 @@ func WithHttpHeader(key, value string) HttpConnectorOption {
 	}
 }
 
+func WithSourceId(sourceId string) HttpConnectorOption {
+	return func(endpoint *stream.Endpoint) {
+		endpoint.EndpointSourceId = sourceId
+	}
+}
+
 func WithHttpHeaders(headers map[string]string) HttpConnectorOption {
 	return func(endpoint *stream.Endpoint) {
 		if endpoint.Meta == nil {

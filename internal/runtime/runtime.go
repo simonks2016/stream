@@ -21,6 +21,13 @@ type Runtime struct {
 	logger            *log.Logger
 }
 
+func (r *Runtime) Job(opts ...stream.JobOption) {
+	//TODO implement me
+	for _, opt := range opts {
+		opt(r)
+	}
+}
+
 func (r *Runtime) AddConnector(connectors ...stream.Connector) {
 	if r.connectorDispatch == nil {
 		panic("connectorDispatch is nil")

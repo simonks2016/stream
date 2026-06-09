@@ -237,8 +237,17 @@ func (h *HttpConnector) doRequest(
 	errEP := h.resolveErrorEndpoint(httpEP)
 
 	if strings.TrimSpace(cfg.URL) == "" {
-		h.emitError(errEP, reqMsg, requestID, fmt.Errorf("http endpoint meta.url is empty"), httpEP)
-		return
+		if url2, ex := binding.From().Meta["url"]; !ex {
+			h.emitError(errEP, reqMsg, requestID, fmt.Errorf("http endpoint meta.url is empty"), httpEP)
+			return
+		} else {
+			if url3, ok := url2.(string); ok {
+				cfg.URL = url3
+			} else {
+				h.emitError(errEP, reqMsg, requestID, fmt.Errorf("http endpoint meta.url is not string"), httpEP)
+				return
+			}
+		}
 	}
 
 	reqCtx := ctx
@@ -377,6 +386,10 @@ func IsHTTPBindingMatch(from, target stream.Endpoint) bool {
 		return false
 	}
 
+	return isMatchURL(from, target) || isMatchSourceId(target, from)
+}
+
+func isMatchURL(from, target stream.Endpoint) bool {
 	targetURl, ok := target.Meta["url"].(string)
 	if !ok {
 		return false
@@ -388,6 +401,11 @@ func IsHTTPBindingMatch(from, target stream.Endpoint) bool {
 	}
 
 	return strings.EqualFold(targetURl, rawURl)
+}
+
+func isMatchSourceId(from, target stream.Endpoint) bool {
+
+	return strings.EqualFold(from.EndpointSourceId, target.EndpointSourceId)
 }
 
 func (h *HttpConnector) emitError(

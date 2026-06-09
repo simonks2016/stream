@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/simonks2016/stream/connectors"
 	"github.com/simonks2016/stream/stream"
 )
 
@@ -44,24 +43,21 @@ func TestNewPipeline(t *testing.T) {
 
 	p := NewPipeline(ctx)
 
-	p.AddConnector(
-		connectors.UseHttp(ctx).On(
-			Bind[map[string]any](
-				HttpPost("http://127.0.0.1:8080/test"),
-				Inline("evt.inference.complete"),
-				&HttpCoder{},
-			)))
-
-	p.On(
-		Inline("evt.inference.complete"),
-		WrapProcessor[string, map[string]any](&Test1{}),
+	p.Job(
+		NewJob[map[string]any, string](
+			Inline("test1"),
+			NewDefaultJob(),
+		),
+		NewJob[string, string](
+			Inline("test2"),
+			NewDefaultJob2()),
 	)
 
 	go func() {
 		time.Sleep(2 * time.Second)
 
 		if err := p.Publish(
-			HttpPost("http://127.0.0.1:8080/test"),
+			Inline("test1"),
 			stream.NewMessage[any](
 				map[string]any{
 					"symbol": "BTC-USDT",
@@ -93,4 +89,38 @@ func (j *HttpCoder) Marshal(msg stream.Message[map[string]any]) ([]byte, error) 
 
 func NewStringPtr(s string) *string {
 	return &s
+}
+
+type DefaultJob struct{}
+
+func (d DefaultJob) Process(ctx context.Context, m stream.Message[map[string]any], j stream.JobCollector[string]) error {
+	//TODO implement me
+
+	fmt.Println(m.Payload)
+
+	j.Collect(
+		Inline("test2"),
+		m.Payload["symbol"].(string),
+	)
+
+	return nil
+
+}
+
+func NewDefaultJob() *DefaultJob {
+
+	return &DefaultJob{}
+
+}
+
+type DefaultJob2 struct{}
+
+func (d DefaultJob2) Process(ctx context.Context, m stream.Message[string], j stream.JobCollector[string]) error {
+
+	fmt.Println(m.Payload)
+	j.Drop()
+	return nil
+}
+func NewDefaultJob2() *DefaultJob2 {
+	return &DefaultJob2{}
 }
