@@ -51,6 +51,18 @@ func TestNewPipeline(t *testing.T) {
 		NewJob[string, string](
 			Inline("test2"),
 			NewDefaultJob2()),
+
+		NewConvergeJob(
+			Converge(
+				topic.EventTradeUpdate,
+				topic.EventOrderBookUpdate,
+			).
+				Process(func(ctx stream.Context, events stream.Events) (*TickUpdate, error) {
+					return TickCalculator.Calculate(events)
+				}).
+				EmitAs(topic.EventTickUpdate),
+			PredictionJob.New(),
+		),
 	)
 
 	go func() {

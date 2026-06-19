@@ -9,8 +9,10 @@ type Job[in any, out any] interface {
 }
 
 type JobCollector[out any] interface {
-	Drop()
+	Drop(...string)
 	Collect(Endpoint, out)
 	SideOutput(Endpoint, any)
 	Record(any)
 }
+
+// Junction --wasm job.wasm --master_url https://stream.henspark.io/master:8080 --s3_option {}

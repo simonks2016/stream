@@ -3,6 +3,8 @@ package jobCollector
 import (
 	"encoding/json"
 	"log"
+	"strings"
+	"time"
 
 	"github.com/simonks2016/stream/stream"
 )
@@ -23,6 +25,17 @@ func (j *JobCollector[o]) Collect(endpoint stream.Endpoint, out o) {
 		j.errs = append(j.errs, err)
 		return
 	}
+	if j.logger != nil {
+		j.logger.Printf(
+			"[COLLECT] key=%s input=%T ingest_ms=%d -> endpoint=%s output=%T emit_ms=%d",
+			j.inputMessage.Key,
+			j.inputMessage.Payload,
+			j.inputMessage.IngestTime,
+			endpoint.FormattedName(),
+			out,
+			time.Now().UnixMilli(),
+		)
+	}
 }
 
 func (j *JobCollector[o]) SideOutput(endpoint stream.Endpoint, out any) {
@@ -34,6 +47,17 @@ func (j *JobCollector[o]) SideOutput(endpoint stream.Endpoint, out any) {
 		j.errs = append(j.errs, err)
 		return
 	}
+	if j.logger != nil {
+		j.logger.Printf(
+			"[SIDE OUTPUT] key=%s input=%T ingest_ms=%d -> endpoint=%s output=%T emit_ms=%d",
+			j.inputMessage.Key,
+			j.inputMessage.Payload,
+			j.inputMessage.IngestTime,
+			endpoint.FormattedName(),
+			out,
+			time.Now().UnixMilli(),
+		)
+	}
 }
 
 func (j *JobCollector[o]) Record(a any) {
@@ -43,9 +67,16 @@ func (j *JobCollector[o]) Record(a any) {
 	j.logger.Printf("Record: %s", string(marshal))
 }
 
-func (j *JobCollector[o]) Drop() {
-	j.logger.Printf("dropping message[%s]...", j.inputMessage.Key)
-	return
+func (j *JobCollector[o]) Drop(details ...string) {
+
+	details = append(details, "key="+j.inputMessage.Key)
+
+	if j.logger != nil {
+		j.logger.Printf(
+			"[DROP] %s",
+			strings.Join(details, ", "),
+		)
+	}
 }
 
 func (j *JobCollector[o]) HasErrors() []error { return j.errs }

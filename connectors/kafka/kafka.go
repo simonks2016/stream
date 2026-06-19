@@ -88,10 +88,14 @@ func (k *KafkaConnector) Emit(ctx context.Context, target stream.Endpoint, msg s
 		from := binding.From()
 		to := binding.To()
 
+
 		// 桥接规则：Kafka(topic) <-> Inline(name)
 		if !IsKafkaToInlineMatch(from, to, target) {
 			continue
 		}
+
+		// topic
+		topic := target.Meta["topic"]
 
 		payload, ok, err := binding.Encode(msg)
 		if err != nil {
@@ -113,12 +117,12 @@ func (k *KafkaConnector) Emit(ctx context.Context, target stream.Endpoint, msg s
 		}
 
 		err = k.producer.WriteMessages(writeCtx, kafka.Message{
-			Topic: fmt.Sprintf("%v", target.Meta["topic"]),
+			Topic: fmt.Sprintf("%v", topic),
 			Value: payload,
 			Time:  time.Now(),
 		})
 		if err != nil {
-			errs = append(errs, fmt.Errorf("write topic=%s: %w", from.Name, err))
+			errs = append(errs, fmt.Errorf("write topic=%s: %w",topic, err))
 		}
 	}
 
