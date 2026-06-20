@@ -13,6 +13,7 @@ type JobCollector[out any] interface {
 	Collect(Endpoint, out)
 	SideOutput(Endpoint, any)
 	Record(any)
+	HasErrors() []error
 }
 
 // Junction --wasm job.wasm --master_url https://stream.henspark.io/master:8080 --s3_option {}

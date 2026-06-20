@@ -9,14 +9,14 @@ import (
 	"github.com/simonks2016/stream/stream"
 )
 
-type JobCollector[o any] struct {
+type JobCollectorImpl[o any] struct {
 	inputMessage stream.Message[any]
 	sink         stream.Sink
 	errs         []error
 	logger       *log.Logger
 }
 
-func (j *JobCollector[o]) Collect(endpoint stream.Endpoint, out o) {
+func (j *JobCollectorImpl[o]) Collect(endpoint stream.Endpoint, out o) {
 	//TODO implement me
 	if err := j.sink(
 		endpoint,
@@ -38,7 +38,7 @@ func (j *JobCollector[o]) Collect(endpoint stream.Endpoint, out o) {
 	}
 }
 
-func (j *JobCollector[o]) SideOutput(endpoint stream.Endpoint, out any) {
+func (j *JobCollectorImpl[o]) SideOutput(endpoint stream.Endpoint, out any) {
 	//TODO implement me
 	if err := j.sink(
 		endpoint,
@@ -60,14 +60,14 @@ func (j *JobCollector[o]) SideOutput(endpoint stream.Endpoint, out any) {
 	}
 }
 
-func (j *JobCollector[o]) Record(a any) {
+func (j *JobCollectorImpl[o]) Record(a any) {
 	//TODO implement me
 	marshal, _ := json.Marshal(a)
 	// 记录日志
 	j.logger.Printf("Record: %s", string(marshal))
 }
 
-func (j *JobCollector[o]) Drop(details ...string) {
+func (j *JobCollectorImpl[o]) Drop(details ...string) {
 
 	details = append(details, "key="+j.inputMessage.Key)
 
@@ -79,10 +79,10 @@ func (j *JobCollector[o]) Drop(details ...string) {
 	}
 }
 
-func (j *JobCollector[o]) HasErrors() []error { return j.errs }
+func (j *JobCollectorImpl[o]) HasErrors() []error { return j.errs }
 
-func NewJobCollector[out any](inputMessage stream.Message[any], sink stream.Sink) *JobCollector[out] {
-	return &JobCollector[out]{
+func NewJobCollector[out any](inputMessage stream.Message[any], sink stream.Sink) stream.JobCollector[out] {
+	return &JobCollectorImpl[out]{
 		sink:         sink,
 		logger:       log.Default(),
 		inputMessage: inputMessage,

@@ -19,6 +19,15 @@ type Runtime struct {
 	inlineDispatch    *inlineDispatch.InlineDispatch
 	connectorDispatch *connectorDispatch.ConnectorDispatch
 	logger            *log.Logger
+	startupHook       []func(ctx context.Context) error
+}
+
+func (r *Runtime) AddStartupHook(hook ...func(ctx context.Context) error) {
+	//TODO implement me
+	if r.startupHook == nil {
+		r.startupHook = make([]func(ctx context.Context) error, 0)
+	}
+	r.startupHook = append(r.startupHook, hook...)
 }
 
 func (r *Runtime) Job(opts ...stream.JobOption) {
@@ -75,6 +84,17 @@ func (r *Runtime) Start() error {
 	go func() {
 		_ = r.inlineDispatch.Run(r.ctx, r.sink)
 	}()
+
+	if len(r.startupHook) > 0 {
+		go func() {
+			for _, f := range r.startupHook {
+				if err := f(r.ctx); err != nil {
+					r.logger.Printf("runtime start hook fail: %v", err)
+					continue
+				}
+			}
+		}()
+	}
 
 	return nil
 }
@@ -135,6 +155,7 @@ func NewRuntime(ctx context.Context, allowedLateness int64, opts ...Option) *Run
 		wm:                watermark.NewWatermark(allowedLateness),
 		inlineDispatch:    inlineDispatch.NewDispatch(1024, pool),
 		connectorDispatch: connectorDispatch.NewConnectorDispatch(pool),
+		startupHook:       make([]func(ctx context.Context) error, 0),
 	}
 
 	for _, opt := range opts {

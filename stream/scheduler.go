@@ -15,6 +15,11 @@ type Scheduler interface {
 type SchedulerJob interface {
 	Target() Endpoint
 	Interval() time.Duration
-	BuildMessage() Message[any]
+	BuildMessage(int) Message[any]
 	Name() string
+}
+
+type SchedulerEvent struct {
+	Iteration int `json:"iteration"`
+	Value     any `json:"value"`
 }

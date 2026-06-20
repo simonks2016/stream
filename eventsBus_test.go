@@ -27,7 +27,7 @@ func (t *Test1) Process(ctx context.Context, in stream.Message[string]) (stream.
 
 type Test2 struct{}
 
-func (t *Test2) Process(ctx context.Context, in stream.Message[map[string]any]) (stream.Endpoint, stream.Message[string], bool, error) {
+func (t *Test2) Process(ctx context.Context, in stream.Message[[]map[string]any]) (stream.Endpoint, stream.Message[string], bool, error) {
 
 	fmt.Println(in.Payload)
 
@@ -44,40 +44,33 @@ func TestNewPipeline(t *testing.T) {
 	p := NewPipeline(ctx)
 
 	p.Job(
-		NewJob[map[string]any, string](
-			Inline("test1"),
-			NewDefaultJob(),
-		),
-		NewJob[string, string](
-			Inline("test2"),
-			NewDefaultJob2()),
-
-		NewConvergeJob(
-			Converge(
-				topic.EventTradeUpdate,
-				topic.EventOrderBookUpdate,
-			).
-				Process(func(ctx stream.Context, events stream.Events) (*TickUpdate, error) {
-					return TickCalculator.Calculate(events)
-				}).
-				EmitAs(topic.EventTickUpdate),
-			PredictionJob.New(),
-		),
+		NewSchedulerJob[string](
+			time.Second,
+			NewDefaultSchedulerJob()),
 	)
 
 	go func() {
-		time.Sleep(2 * time.Second)
 
-		if err := p.Publish(
-			Inline("test1"),
-			stream.NewMessage[any](
-				map[string]any{
-					"symbol": "BTC-USDT",
-				}),
-		); err != nil {
-			t.Fatal(err)
+		var ticker = time.NewTicker(time.Second)
+		var i = 0
+		for {
+			select {
+			case <-ticker.C:
+				i = i + 1
+				if err := p.Publish(
+					Inline("test2"),
+					stream.NewMessage[any](
+						fmt.Sprintf("%d", i),
+					),
+				); err != nil {
+					t.Fatal(err)
+				}
+			case <-ctx.Done():
+				return
+			default:
+				// 继续执行
+			}
 		}
-
 	}()
 
 	_ = p.Run()
@@ -103,31 +96,9 @@ func NewStringPtr(s string) *string {
 	return &s
 }
 
-type DefaultJob struct{}
-
-func (d DefaultJob) Process(ctx context.Context, m stream.Message[map[string]any], j stream.JobCollector[string]) error {
-	//TODO implement me
-
-	fmt.Println(m.Payload)
-
-	j.Collect(
-		Inline("test2"),
-		m.Payload["symbol"].(string),
-	)
-
-	return nil
-
-}
-
-func NewDefaultJob() *DefaultJob {
-
-	return &DefaultJob{}
-
-}
-
 type DefaultJob2 struct{}
 
-func (d DefaultJob2) Process(ctx context.Context, m stream.Message[string], j stream.JobCollector[string]) error {
+func (d DefaultJob2) Process(ctx context.Context, m stream.Message[[]string], j stream.JobCollector[string]) error {
 
 	fmt.Println(m.Payload)
 	j.Drop()
@@ -135,4 +106,16 @@ func (d DefaultJob2) Process(ctx context.Context, m stream.Message[string], j st
 }
 func NewDefaultJob2() *DefaultJob2 {
 	return &DefaultJob2{}
+}
+
+type DefaultScheduler struct{}
+
+func (d DefaultScheduler) Process(ctx context.Context, m stream.Message[stream.SchedulerEvent], j stream.JobCollector[string]) error {
+	//TODO implement me
+	fmt.Println(m.Payload.Iteration)
+	return nil
+}
+
+func NewDefaultSchedulerJob() *DefaultScheduler {
+	return &DefaultScheduler{}
 }

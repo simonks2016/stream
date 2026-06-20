@@ -76,12 +76,14 @@ func (s *DefaultScheduler) Run(ctx context.Context) {
 }
 
 func (s *DefaultScheduler) runJob(ctx context.Context, job stream.SchedulerJob) {
-	
+
 	ticker := time.NewTicker(job.Interval())
 	defer ticker.Stop()
 
 	log.Printf("[scheduler] job started: name=%s interval=%s target=%s",
 		job.Name(), job.Interval(), job.Target().Name)
+
+	var iteration = 0
 
 	for {
 		select {
@@ -90,7 +92,10 @@ func (s *DefaultScheduler) runJob(ctx context.Context, job stream.SchedulerJob) 
 			return
 
 		case <-ticker.C:
-			msg := job.BuildMessage()
+
+			iteration++
+			//
+			msg := job.BuildMessage(iteration)
 			targetEndPoint := job.Target()
 
 			// 如果消息时间没带，这里补一下

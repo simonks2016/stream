@@ -10,7 +10,7 @@ type DefaultSchedulerJob struct {
 	SchedularName  string
 	Duration       time.Duration
 	TargetEndPoint stream.Endpoint
-	Callback       func() stream.Message[any]
+	Callback       func() any
 }
 
 func (d *DefaultSchedulerJob) Interval() time.Duration {
@@ -25,9 +25,16 @@ func (d *DefaultSchedulerJob) Name() string {
 	return d.SchedularName
 }
 
-func (d *DefaultSchedulerJob) BuildMessage() stream.Message[any] {
-	if d.Callback == nil {
-		return stream.Message[any]{}
-	}
-	return d.Callback()
+func (d *DefaultSchedulerJob) BuildMessage(iteration int) stream.Message[any] {
+	return stream.NewMessage[any](
+		stream.SchedulerEvent{
+			Iteration: iteration,
+			Value: func() any {
+				if d.Callback != nil {
+					return d.Callback()
+				}
+				return nil
+			},
+		},
+	)
 }

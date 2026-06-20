@@ -69,3 +69,15 @@ func (e Endpoint) FormattedName() string {
 	}
 
 }
+
+func InlineEndpoint(name string) Endpoint {
+
+	return Endpoint{
+		Kind: InlineKind,
+		Name: name,
+		Meta: map[string]interface{}{
+			"topic": name,
+		},
+		EndpointSourceId: name,
+	}
+}
