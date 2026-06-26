@@ -45,7 +45,6 @@ func (s *SlidingWindowImpl[in, out]) Register(pipeline stream.Pipeline) {
 		func() stream.Handler {
 			return func(ctx context.Context, msg stream.Message[any], sink stream.Sink) error {
 
-				fmt.Println("OK")
 				if msg.IsEmpty() {
 					return nil
 				}

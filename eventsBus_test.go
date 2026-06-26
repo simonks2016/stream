@@ -44,9 +44,9 @@ func TestNewPipeline(t *testing.T) {
 	p := NewPipeline(ctx)
 
 	p.Job(
-		NewSchedulerJob[string](
-			time.Second,
-			NewDefaultSchedulerJob()),
+		NewRollingWindowJob[string, string](
+			Inline("test2"),
+			NewDefaultJob2()),
 	)
 
 	go func() {
