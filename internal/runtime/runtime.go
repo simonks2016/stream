@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/simonks2016/stream/internal/connectorDispatch"
 	"github.com/simonks2016/stream/internal/inlineDispatch"
@@ -86,14 +87,21 @@ func (r *Runtime) Start() error {
 	}()
 
 	if len(r.startupHook) > 0 {
-		go func() {
-			for _, f := range r.startupHook {
-				if err := f(r.ctx); err != nil {
+		var wg sync.WaitGroup
+
+		for _, hook := range r.startupHook {
+			hook := hook
+
+			wg.Go(func() {
+				defer wg.Done()
+
+				if err := hook(r.ctx); err != nil {
 					r.logger.Printf("runtime start hook fail: %v", err)
-					continue
 				}
-			}
-		}()
+			})
+		}
+
+		wg.Wait()
 	}
 
 	return nil
